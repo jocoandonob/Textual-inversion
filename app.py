@@ -5,24 +5,32 @@ from diffusers.utils import make_image_grid
 from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
+def get_device():
+    if torch.cuda.is_available():
+        return "cuda", torch.float16
+    return "cpu", torch.float32
+
 def load_sd_model():
+    device, dtype = get_device()
     pretrained_model_name_or_path = "runwayml/stable-diffusion-v1-5"
     repo_id_embeds = "sd-concepts-library/cat-toy"
     
     pipeline = StableDiffusionPipeline.from_pretrained(
         pretrained_model_name_or_path,
-        torch_dtype=torch.float32,
+        torch_dtype=dtype,
         use_safetensors=True
     )
     
     pipeline.load_textual_inversion(repo_id_embeds)
+    pipeline.to(device)
     return pipeline
 
 def load_sdxl_model():
+    device, dtype = get_device()
     # Load SDXL pipeline
     pipe = AutoPipelineForText2Image.from_pretrained(
         "stabilityai/stable-diffusion-xl-base-1.0",
-        torch_dtype=torch.float32  # Changed from float16 to float32 for CPU
+        torch_dtype=dtype
     )
     
     # Load unaestheticXL embeddings
@@ -43,6 +51,7 @@ def load_sdxl_model():
         tokenizer=pipe.tokenizer
     )
     
+    pipe.to(device)
     return pipe
 
 def generate_sd_images(prompt, num_images, guidance_scale, num_inference_steps):
@@ -86,11 +95,15 @@ def generate_sdxl_images(prompt, num_images, guidance_scale, num_inference_steps
     grid = make_image_grid(all_images, num_rows, num_samples_per_row)
     return grid
 
+# Get device info for UI
+device, dtype = get_device()
+device_info = f"Running on {device.upper()}" + (" (GPU)" if device == "cuda" else " (CPU)")
+
 # Create Gradio interface
 with gr.Blocks(title="Textual Inversion Image Generator") as demo:
     gr.Markdown("# Textual Inversion Image Generator")
     gr.Markdown("Generate images using Textual Inversion with Stable Diffusion")
-    gr.Markdown("⚠️ Running on CPU - Generation will be slower than GPU")
+    gr.Markdown(f"ℹ️ {device_info}")
     
     with gr.Tabs():
         with gr.TabItem("Stable Diffusion 1.5"):
