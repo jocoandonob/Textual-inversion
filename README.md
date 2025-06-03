@@ -1,5 +1,7 @@
 # Textual Inversion Image Generator
 
+![Textual Inversion Demo](thumbnail.png)
+
 This is a Gradio-based web application that generates images using both Stable Diffusion 1.5 and Stable Diffusion XL with Textual Inversion. The application includes two tabs:
 - SD 1.5 tab: Uses the "cat-toy" concept from the SD Concepts Library
 - SDXL tab: Uses the "unaestheticXL" embedding as a negative prompt for improved image quality
